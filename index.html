@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English Grammar Game – B1/B2</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F5F2EC; --card: #FFFFFF; --text: #1A1A1A; --muted: #6B6860;
+    --border: #D8D4CA; --green-bg: #E8F4E8; --green-text: #2D6A2D; --green-border: #7BBD7B;
+    --red-bg: #FCEAEA; --red-text: #A32323; --red-border: #E08080;
+    --accent: #2D4A8A; --accent-light: #EEF2FA;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text);
+    min-height: 100vh; display: flex; align-items: flex-start; justify-content: center;
+    padding: 2rem 1rem 4rem; }
+  .container { width: 100%; max-width: 640px; }
+  header { text-align: center; margin-bottom: 2.5rem; padding-top: 1rem; }
+  header h1 { font-family: 'DM Serif Display', serif; font-size: 2rem; font-weight: 400;
+    letter-spacing: -0.01em; color: var(--text); margin-bottom: 0.25rem; }
+  header p { font-size: 14px; color: var(--muted); }
+
+  /* Audio toggle */
+  .audio-toggle { display: flex; justify-content: center; margin-bottom: 1.5rem; }
+  .audio-btn { display: flex; align-items: center; gap: 6px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 999px; padding: 6px 16px;
+    font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--muted);
+    cursor: pointer; transition: background 0.12s; }
+  .audio-btn:hover { background: var(--accent-light); }
+  .audio-btn.on { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+  .audio-btn svg { flex-shrink: 0; }
+
+  .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+  .badge { font-size: 13px; color: var(--muted); background: var(--card);
+    border: 1px solid var(--border); border-radius: 999px; padding: 4px 14px; }
+  .score-badge { background: var(--green-bg); color: var(--green-text); border-color: var(--green-border); font-weight: 500; }
+  .progress-bar { height: 5px; background: var(--border); border-radius: 999px;
+    margin-bottom: 1.25rem; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 999px;
+    transition: width 0.4s cubic-bezier(.4,0,.2,1); }
+
+  .question-card { background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 1.75rem; margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+
+  .sentence-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 1.5rem; }
+  .speak-btn { flex-shrink: 0; margin-top: 4px; background: var(--accent-light);
+    border: 1px solid #c5d0ee; border-radius: 8px; padding: 6px 8px;
+    cursor: pointer; color: var(--accent); transition: background 0.12s; }
+  .speak-btn:hover { background: #dce4f5; }
+  .speak-btn.speaking { background: var(--accent); color: #fff; }
+  .speak-btn svg { display: block; }
+
+  .category { font-size: 11px; color: var(--accent); background: var(--accent-light);
+    border-radius: 999px; padding: 3px 10px; display: inline-block; font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 1rem; }
+  .sentence { font-family: 'DM Serif Display', serif; font-size: 1.25rem;
+    line-height: 1.65; color: var(--text); flex: 1; }
+  .blank { display: inline-block; border-bottom: 2.5px solid var(--accent);
+    min-width: 100px; text-align: center; color: var(--accent);
+    font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 1rem;
+    vertical-align: middle; padding: 0 4px; }
+
+  .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .opt-btn { background: #FAFAF8; border: 1px solid var(--border); border-radius: 10px;
+    padding: 11px 16px; font-size: 15px; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; text-align: left; color: var(--text);
+    transition: background 0.12s, border-color 0.12s, transform 0.1s; line-height: 1.4; }
+  .opt-btn:hover:not(:disabled) { background: var(--accent-light); border-color: var(--accent); transform: translateY(-1px); }
+  .opt-btn.correct { background: var(--green-bg); border-color: var(--green-border); color: var(--green-text); font-weight: 500; }
+  .opt-btn.wrong { background: var(--red-bg); border-color: var(--red-border); color: var(--red-text); }
+  .opt-btn:disabled { cursor: default; transform: none; }
+
+  .feedback { margin-top: 1.25rem; padding: 12px 16px; border-radius: 10px;
+    font-size: 14px; line-height: 1.6; display: none; }
+  .feedback.show { display: block; }
+  .feedback.correct { background: var(--green-bg); color: var(--green-text); border: 1px solid var(--green-border); }
+  .feedback.wrong   { background: var(--red-bg);   color: var(--red-text);   border: 1px solid var(--red-border); }
+
+  /* Read explanation button */
+  .read-btn { margin-top: 8px; display: none; align-items: center; gap: 5px;
+    background: none; border: 1px solid currentColor; border-radius: 6px;
+    padding: 4px 10px; font-size: 12px; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; opacity: 0.75; transition: opacity 0.12s; }
+  .read-btn:hover { opacity: 1; }
+  .read-btn.show { display: inline-flex; }
+
+  .next-btn { width: 100%; padding: 13px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--card); color: var(--text); font-size: 15px;
+    font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer; display: none;
+    transition: background 0.12s, transform 0.1s; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .next-btn.show { display: block; }
+  .next-btn:hover { background: var(--accent-light); transform: translateY(-1px); }
+
+  .end-screen { background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+    padding: 2.5rem 2rem; text-align: center; display: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .end-screen.show { display: block; }
+  .end-score { font-family: 'DM Serif Display', serif; font-size: 4rem; color: var(--text);
+    line-height: 1; margin-bottom: 0.5rem; }
+  .end-label { font-size: 13px; color: var(--muted); margin-bottom: 0.5rem; }
+  .end-msg { font-size: 16px; color: var(--text); margin-bottom: 1.75rem; line-height: 1.6; }
+  .restart-btn { padding: 12px 32px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--accent); color: #fff; font-size: 15px; font-family: 'DM Sans', sans-serif;
+    font-weight: 500; cursor: pointer; transition: opacity 0.12s; }
+  .restart-btn:hover { opacity: 0.88; }
+
+  @media (max-width: 480px) {
+    .options-grid { grid-template-columns: 1fr; }
+    header h1 { font-size: 1.6rem; }
+    .sentence { font-size: 1.1rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Fill in the Blank</h1>
+    <p>English Grammar Practice &mdash; Level B1 / B2</p>
+  </header>
+
+  <!-- Audio on/off toggle -->
+  <div class="audio-toggle">
+    <button class="audio-btn on" id="audio-toggle-btn" onclick="toggleAudio()">
+      <svg id="audio-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+      </svg>
+      <span id="audio-label">Audio: ON</span>
+    </button>
+  </div>
+
+  <div id="game-area">
+    <div class="top-bar">
+      <span class="badge" id="q-counter">Question 1 / 10</span>
+      <span class="badge score-badge" id="score-display">Score: 0</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress" style="width:10%"></div></div>
+
+    <div class="question-card">
+      <span class="category" id="cat"></span>
+      <div class="sentence-row">
+        <button class="speak-btn" id="speak-btn" title="Listen to sentence" onclick="speakSentence()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+        </button>
+        <p class="sentence" id="sentence"></p>
+      </div>
+      <div class="options-grid" id="options"></div>
+      <div class="feedback" id="feedback"></div>
+      <button class="read-btn" id="read-btn" onclick="speakFeedback()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        </svg>
+        Read explanation
+      </button>
+    </div>
+
+    <button class="next-btn" id="next-btn">Next question &rarr;</button>
+  </div>
+
+  <div class="end-screen" id="end-screen">
+    <p class="end-label">Your final score</p>
+    <p class="end-score" id="final-score"></p>
+    <p class="end-msg" id="final-msg"></p>
+    <button class="restart-btn" onclick="restart()">Play again</button>
+  </div>
+</div>
+
+<script>
+// ── Questions ──────────────────────────────────────────────────────────────
+const questions = [
+  { cat: "Present Perfect vs Past Simple",
+    sentence: "She _____ in London for three years before moving to Paris.",
+    spokenSentence: "She blank in London for three years before moving to Paris.",
+    answer: "had lived", options: ["has lived","had lived","lived","was living"],
+    explanation: "We use the Past Perfect, had plus past participle, for an action completed before another past event." },
+  { cat: "Conditionals",
+    sentence: "If I _____ more time, I would have studied abroad.",
+    spokenSentence: "If I blank more time, I would have studied abroad.",
+    answer: "had had", options: ["have had","had had","would have","had"],
+    explanation: "Third conditional: If plus past perfect describes an unreal past situation." },
+  { cat: "Passive Voice",
+    sentence: "The new bridge _____ by the end of next year.",
+    spokenSentence: "The new bridge blank by the end of next year.",
+    answer: "will have been built", options: ["will be built","will have been built","is being built","has been built"],
+    explanation: "Future perfect passive: will have been plus past participle, for a completed future action." },
+  { cat: "Modal Verbs",
+    sentence: "You _____ see a doctor — that cough sounds serious.",
+    spokenSentence: "You blank see a doctor. That cough sounds serious.",
+    answer: "should", options: ["must","should","might","would"],
+    explanation: "Should expresses advice or recommendation." },
+  { cat: "Reported Speech",
+    sentence: "He said he _____ the report the following day.",
+    spokenSentence: "He said he blank the report the following day.",
+    answer: "would finish", options: ["will finish","would finish","has finished","finishes"],
+    explanation: "In reported speech, will shifts to would when the reporting verb is in the past." },
+  { cat: "Relative Clauses",
+    sentence: "The book _____ I told you about is now available online.",
+    spokenSentence: "The book blank I told you about is now available online.",
+    answer: "which", options: ["who","which","whose","whom"],
+    explanation: "Which introduces a relative clause referring to a thing." },
+  { cat: "Gerund vs Infinitive",
+    sentence: "I regret _____ you that your application was unsuccessful.",
+    spokenSentence: "I regret blank you that your application was unsuccessful.",
+    answer: "to tell", options: ["telling","to tell","tell","told"],
+    explanation: "Regret followed by the infinitive is used when introducing bad news." },
+  { cat: "Articles",
+    sentence: "She plays _____ violin in a famous orchestra.",
+    spokenSentence: "She plays blank violin in a famous orchestra.",
+    answer: "the", options: ["a","an","the","–"],
+    explanation: "We use the with musical instruments when talking about playing them." },
+  { cat: "Prepositions",
+    sentence: "He insisted _____ paying for the whole dinner.",
+    spokenSentence: "He insisted blank paying for the whole dinner.",
+    answer: "on", options: ["in","on","at","for"],
+    explanation: "Insist on plus gerund is the correct collocation in English." },
+  { cat: "Connectors",
+    sentence: "She worked very hard; _____, she failed the exam.",
+    spokenSentence: "She worked very hard. Blank, she failed the exam.",
+    answer: "nevertheless", options: ["therefore","moreover","nevertheless","furthermore"],
+    explanation: "Nevertheless expresses contrast, meaning in spite of that, or even so." }
+];
+
+// ── State ──────────────────────────────────────────────────────────────────
+let shuffled = [], current = 0, score = 0, answered = false;
+let audioOn = true;
+let currentFeedbackText = '';
+let currentQ = null;
+
+// ── Audio: Web Audio API (sound effects) ──────────────────────────────────
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let ctx = null;
+function getCtx() { if (!ctx) ctx = new AudioCtx(); return ctx; }
+
+function playTone(freq, type, duration, gainVal, delay = 0) {
+  if (!audioOn) return;
+  try {
+    const c = getCtx();
+    const osc = c.createOscillator();
+    const g = c.createGain();
+    osc.connect(g); g.connect(c.destination);
+    osc.type = type; osc.frequency.value = freq;
+    g.gain.setValueAtTime(0, c.currentTime + delay);
+    g.gain.linearRampToValueAtTime(gainVal, c.currentTime + delay + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + delay + duration);
+    osc.start(c.currentTime + delay);
+    osc.stop(c.currentTime + delay + duration + 0.05);
+  } catch(e) {}
+}
+
+function playCorrect() {
+  playTone(523, 'sine', 0.15, 0.3);
+  playTone(659, 'sine', 0.15, 0.3, 0.12);
+  playTone(784, 'sine', 0.25, 0.3, 0.24);
+}
+
+function playWrong() {
+  playTone(330, 'sawtooth', 0.12, 0.2);
+  playTone(260, 'sawtooth', 0.18, 0.2, 0.13);
+}
+
+function playClick() {
+  playTone(900, 'sine', 0.05, 0.15);
+}
+
+// ── Audio: Web Speech API (TTS) ────────────────────────────────────────────
+function speak(text, onEnd) {
+  if (!audioOn || !window.speechSynthesis) { if (onEnd) onEnd(); return; }
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'en-US'; utt.rate = 0.92; utt.pitch = 1;
+  // Try to pick a good English voice
+  const voices = window.speechSynthesis.getVoices();
+  const preferred = voices.find(v => v.lang.startsWith('en') && v.name.includes('Google'))
+    || voices.find(v => v.lang.startsWith('en-US'))
+    || voices.find(v => v.lang.startsWith('en'));
+  if (preferred) utt.voice = preferred;
+  if (onEnd) utt.onend = onEnd;
+  window.speechSynthesis.speak(utt);
+}
+
+function speakSentence() {
+  if (!currentQ) return;
+  const btn = document.getElementById('speak-btn');
+  btn.classList.add('speaking');
+  speak(currentQ.spokenSentence, () => btn.classList.remove('speaking'));
+}
+
+function speakFeedback() {
+  if (currentFeedbackText) speak(currentFeedbackText);
+}
+
+// ── Audio toggle ───────────────────────────────────────────────────────────
+function toggleAudio() {
+  audioOn = !audioOn;
+  const btn = document.getElementById('audio-toggle-btn');
+  const label = document.getElementById('audio-label');
+  const icon = document.getElementById('audio-icon');
+  if (audioOn) {
+    btn.classList.add('on');
+    label.textContent = 'Audio: ON';
+    icon.innerHTML = `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+      <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>`;
+  } else {
+    btn.classList.remove('on');
+    label.textContent = 'Audio: OFF';
+    window.speechSynthesis && window.speechSynthesis.cancel();
+    icon.innerHTML = `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+      <line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>`;
+  }
+}
+
+// ── Game logic ─────────────────────────────────────────────────────────────
+function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+
+function load(q, idx) {
+  answered = false;
+  currentQ = q;
+  currentFeedbackText = '';
+  document.getElementById('cat').textContent = q.cat;
+  const blank = `<span class="blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>`;
+  document.getElementById('sentence').innerHTML = q.sentence.replace('_____', blank);
+  document.getElementById('q-counter').textContent = `Question ${idx + 1} / ${shuffled.length}`;
+  document.getElementById('score-display').textContent = `Score: ${score}`;
+  document.getElementById('progress').style.width = `${((idx + 1) / shuffled.length) * 100}%`;
+  document.getElementById('speak-btn').classList.remove('speaking');
+  document.getElementById('read-btn').className = 'read-btn';
+
+  const opts = document.getElementById('options');
+  opts.innerHTML = '';
+  shuffle(q.options).forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.textContent = opt;
+    btn.onclick = () => pick(btn, opt, q);
+    opts.appendChild(btn);
+  });
+
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback';
+  fb.textContent = '';
+  document.getElementById('next-btn').className = 'next-btn';
+
+  // Auto-read sentence when question loads
+  if (audioOn) {
+    setTimeout(() => speakSentence(), 300);
+  }
+}
+
+function pick(btn, opt, q) {
+  if (answered) return;
+  answered = true;
+  playClick();
+  document.querySelectorAll('.opt-btn').forEach(b => {
+    b.disabled = true;
+    if (b.textContent === q.answer) b.classList.add('correct');
+  });
+  const fb = document.getElementById('feedback');
+  if (opt === q.answer) {
+    score++;
+    btn.classList.add('correct');
+    currentFeedbackText = 'Correct! ' + q.explanation;
+    fb.textContent = '✓ Correct! ' + q.explanation;
+    fb.className = 'feedback correct show';
+    playCorrect();
+  } else {
+    btn.classList.add('wrong');
+    currentFeedbackText = 'The correct answer is ' + q.answer + '. ' + q.explanation;
+    fb.textContent = '✗ The correct answer is "' + q.answer + '". ' + q.explanation;
+    fb.className = 'feedback wrong show';
+    playWrong();
+  }
+  document.getElementById('read-btn').className = 'read-btn show';
+  document.getElementById('score-display').textContent = `Score: ${score}`;
+  document.getElementById('next-btn').className = 'next-btn show';
+
+  // Auto-read feedback
+  if (audioOn) {
+    setTimeout(() => speak(currentFeedbackText), 400);
+  }
+}
+
+document.getElementById('next-btn').onclick = () => {
+  window.speechSynthesis && window.speechSynthesis.cancel();
+  current++;
+  if (current >= shuffled.length) showEnd();
+  else load(shuffled[current], current);
+};
+
+function showEnd() {
+  document.getElementById('game-area').style.display = 'none';
+  const end = document.getElementById('end-screen');
+  end.className = 'end-screen show';
+  document.getElementById('final-score').textContent = score + ' / ' + shuffled.length;
+  const pct = score / shuffled.length;
+  const msg =
+    pct === 1  ? 'Perfect score! Excellent grammar command.' :
+    pct >= 0.8 ? 'Great job! You have a strong grasp of B1–B2 grammar.' :
+    pct >= 0.6 ? 'Good effort! Review the topics you missed.' :
+                 "Keep practising — you'll get there!";
+  document.getElementById('final-msg').textContent = msg;
+  if (audioOn) setTimeout(() => speak('Your score is ' + score + ' out of ' + shuffled.length + '. ' + msg), 400);
+}
+
+function restart() {
+  window.speechSynthesis && window.speechSynthesis.cancel();
+  score = 0; current = 0;
+  shuffled = shuffle(questions);
+  document.getElementById('end-screen').className = 'end-screen';
+  document.getElementById('game-area').style.display = 'block';
+  load(shuffled[0], 0);
+}
+
+// Preload voices (Chrome needs this)
+if (window.speechSynthesis) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+}
+
+shuffled = shuffle(questions);
+load(shuffled[0], 0);
+</script>
+</body>
+</html>
